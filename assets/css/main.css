@@ -2027,7 +2027,7 @@ input, select, textarea {
 		.icon.featured {
 			position: relative;
 			display: inline-block;
-			background-color: #d52349;
+			background-color: #061ffd;
 			width: 9em;
 			padding: 1.75em 0 0.75em 0;
 			border-top-left-radius: 5px;
@@ -2047,25 +2047,25 @@ input, select, textarea {
 				position: absolute;
 				bottom: -1.95em;
 				left: 0;
-				border-top: solid 2em #d52349;
+				border-top: solid 2em #061ffd;
 				border-left: solid 4.5em transparent;
 				border-right: solid 4.5em transparent;
 			}
 
 			.icon.featured.alt {
-				background-color: #252122;
+				background-color: #f80707;
 			}
 
 				.icon.featured.alt:after {
-					border-top-color: #252122;
+					border-top-color: #f80707;
 				}
 
 			.icon.featured.alt2 {
-				background-color: #827a7c;
+				background-color: #06772b;
 			}
 
 				.icon.featured.alt2:after {
-					border-top-color: #827a7c;
+					border-top-color: #06772b;
 				}
 
 /* Page Wrapper */
