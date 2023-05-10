@@ -100,10 +100,11 @@ input, select, textarea {
 
 	body, input, textarea, select {
 		font-family: 'Source Sans Pro';
-		font-weight: 300;
-		color: #5d5d5d;
+		font-weight: 500;
+		color: #0e0d0d;
 		font-size: 14pt;
 		line-height: 1.75em;
+		
 	}
 
 	strong, b {
@@ -158,6 +159,8 @@ input, select, textarea {
 	
 	h4 {
 		font-size: 1em;
+		color: #0e0d0d;
+		font-weight: 500;
 	}
 
 	a {
@@ -183,8 +186,8 @@ input, select, textarea {
 	p, ul, ol, dl, table {
 		margin-bottom: 2em;
 	}
-
-/* Container */
+	
+	/* Container */
 
 	.container {
 		margin: 0 auto;
