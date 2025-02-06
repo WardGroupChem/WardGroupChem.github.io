@@ -2061,12 +2061,28 @@ input, select, textarea {
 				}
 
 			.icon.featured.alt2 {
-				background-color: #06772b;
+				background-color: #1ed4c5;
 			}
 
 				.icon.featured.alt2:after {
-					border-top-color: #06772b;
+					border-top-color: #1ed4c5;
 				}
+
+				.icon.featured.alt4 {
+					background-color: #8b1ed4;
+				}
+	
+					.icon.featured.alt4:after {
+						border-top-color: #8b1ed4;
+					}
+
+					.icon.featured.alt5 {
+					background-color: #e76f0d;
+				}
+	
+					.icon.featured.alt5:after {
+						border-top-color: #e76f0d;
+					}
 
 /* Page Wrapper */
 
