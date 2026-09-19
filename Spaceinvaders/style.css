@@ -1,0 +1,513 @@
+:root {
+  --bg-a: #EEF1FF;
+  --bg-b: #FDF1F6;
+  --card: #FFFFFF;
+  --card-tint: #FAFAFF;
+  --ink: #211C36;
+  --ink-soft: #6C6584;
+  --rule: #E3E1F2;
+
+  --primary: #6C5CE7;
+  --primary-dark: #4A38C4;
+  --accent2: #00BFA6;
+  --break: #FF6B4A;
+
+  --correct: #16A970;
+  --correct-bg: #E3FAEF;
+  --incorrect: #F0455F;
+  --incorrect-bg: #FDE6EA;
+
+  --shadow: 0 6px 20px rgba(76, 60, 180, 0.10);
+  --shadow-sm: 0 2px 8px rgba(76, 60, 180, 0.07);
+
+  --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 55%, var(--bg-a) 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.5;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+/* ---- Masthead ---- */
+.masthead {
+  padding: 26px 0 16px;
+  margin-bottom: 28px;
+}
+.masthead-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.wordmark {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(100deg, var(--primary), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.wordmark-accent { color: var(--break); -webkit-text-fill-color: var(--break); }
+.tagline {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.progress-track {
+  margin-top: 14px;
+  height: 8px;
+  background: rgba(108, 92, 231, 0.12);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent2));
+  border-radius: 5px;
+  transition: width 0.35s ease;
+}
+
+/* ---- Screens ---- */
+.screen.hidden { display: none; }
+
+h1 {
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  line-height: 1.25;
+  margin: 0 0 14px;
+  color: var(--primary-dark);
+}
+.lede {
+  font-size: 1.02rem;
+  color: var(--ink);
+  max-width: 52ch;
+}
+.rules {
+  margin: 18px 0 26px;
+  padding-left: 20px;
+  color: var(--ink-soft);
+}
+.rules li { margin-bottom: 6px; }
+
+/* ---- Difficulty selector ---- */
+.difficulty-select {
+  margin: 4px 0 22px;
+}
+.difficulty-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.difficulty-options {
+  display: flex;
+  gap: 8px;
+}
+.diff-btn {
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--rule);
+  background: var(--card);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.diff-btn:hover { border-color: var(--primary); }
+.diff-btn.active {
+  border-color: transparent;
+  background: linear-gradient(100deg, var(--primary), var(--accent2));
+  color: #fff;
+}
+
+.btn {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 13px 30px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(100deg, var(--primary), var(--accent2));
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.btn-secondary {
+  background: var(--card);
+  color: var(--primary-dark);
+  border: 1.5px solid var(--primary);
+}
+.btn-secondary:hover { background: var(--card-tint); }
+
+/* ---- Puzzle head ---- */
+.puzzle-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.puzzle-count {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+  background: rgba(108, 92, 231, 0.12);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.puzzle-title {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+
+/* ---- Target card / reaction row ---- */
+.target-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  padding: 20px 12px 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.reaction-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.reaction-mol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mol-cap {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.reaction-mol svg { max-width: 100%; height: auto; }
+.reaction-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding-top: 14px;
+}
+.arrow-q {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.arrow-line {
+  display: flex;
+  align-items: center;
+}
+.arrow-shaft {
+  width: 32px;
+  height: 2px;
+  background: var(--primary);
+}
+.arrow-head {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--primary);
+}
+.hint {
+  text-align: center;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: 14px 0 0;
+}
+.hint.hidden { display: none; }
+
+.instruction {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+
+/* ---- Options ---- */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .options-grid { grid-template-columns: 1fr; }
+}
+.option-card {
+  background: var(--card);
+  border: 2px solid var(--rule);
+  border-radius: 14px;
+  padding: 14px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  font-family: var(--sans);
+  box-shadow: var(--shadow-sm);
+}
+.option-card:hover:not(:disabled) {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.option-card:disabled { cursor: default; }
+.reagent-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  text-align: center;
+}
+.reagent-text {
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.option-card.correct {
+  border-color: var(--correct);
+  background: var(--correct-bg);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.option-card.incorrect {
+  border-color: var(--incorrect);
+  background: var(--incorrect-bg);
+}
+
+/* ---- Feedback ---- */
+.feedback {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+.feedback.hidden { display: none; }
+#feedback-text {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+}
+
+/* ---- End screen ---- */
+.end-score {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--primary-dark);
+  margin-bottom: 24px;
+}
+.end-review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.review-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+.review-mark {
+  font-weight: 700;
+  width: 18px;
+  text-align: center;
+}
+.review-row.correct .review-mark { color: var(--correct); }
+.review-row.incorrect .review-mark { color: var(--incorrect); }
+.review-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.review-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.review-detail {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  padding-left: 28px;
+}
+.review-detail strong { color: var(--ink); }
+
+/* ---- Molecule SVG shared styles ----
+   Structures stay dark-on-white for clarity, regardless of the app's
+   accent palette — legibility of the chemistry comes first. */
+.mol .ring-hex { fill: none; stroke: var(--ink); stroke-width: 2; }
+.mol .ring-circle { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.mol .atom-label { font-family: var(--sans); font-size: 13px; fill: var(--ink); }
+.mol .bond-cond { font-family: var(--sans); font-size: 9.5px; fill: var(--ink-soft); font-style: italic; }
+
+/* ---- Invaders game additions ---- */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary-dark);
+}
+.hud-item {
+  background: var(--card);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: var(--shadow-sm);
+}
+.hud-score { color: var(--accent2); }
+.hud-btn {
+  border: none;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--primary-dark);
+}
+.hud-btn:active { background: var(--primary); color: #fff; }
+
+.game-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.game-frame {
+  position: relative;
+  padding: 9px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary), var(--accent2));
+  box-shadow: var(--shadow);
+}
+#game-canvas {
+  background: #0A0C22;
+  border-radius: 13px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+.frame-hex {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
+  z-index: 2;
+}
+.frame-hex.tl { top: 2px; left: 2px; }
+.frame-hex.tr { top: 2px; right: 2px; }
+.frame-hex.bl { bottom: 2px; left: 2px; }
+.frame-hex.br { bottom: 2px; right: 2px; }
+
+.pause-overlay {
+  position: absolute;
+  top: 9px; left: 9px; right: 9px; bottom: 9px;
+  border-radius: 13px;
+  background: rgba(10, 12, 34, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+.pause-overlay.hidden { display: none; }
+.pause-card {
+  text-align: center;
+}
+.pause-card h3 {
+  font-family: var(--serif);
+  color: #fff;
+  font-size: 1.4rem;
+  margin: 0 0 14px;
+}
+
+.game-wrap.hidden { display: none; }
+.controls.hidden { display: none; }
+
+.controls {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.ctl-btn {
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--primary-dark);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  padding: 14px 0;
+}
+.ctl-btn:active { background: var(--primary); color: #fff; }
+.ctl-fire {
+  background: linear-gradient(100deg, var(--primary), var(--accent2));
+  color: #fff;
+}
+
+@media (min-width: 620px) {
+  .controls { display: none; } /* desktop: keyboard only, saves space */
+}
+
+/* The quiz takes over the full app width while it's up — game canvas and
+   controls hide (see game.js) so molecules and options stay readable on
+   a small phone screen, same pattern as the maze checkpoint overlay. */
+.quiz-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.quiz-overlay.hidden { display: none; }

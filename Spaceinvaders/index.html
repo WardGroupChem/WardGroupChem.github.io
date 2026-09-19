@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Alkene &amp; Alkyne Invaders</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <span class="wordmark">Synthesize<span class="wordmark-accent">//</span></span>
+      <span class="tagline">space invaders — alkenes &amp; alkynes</span>
+    </div>
+  </header>
+
+  <main id="screen-intro" class="screen">
+    <h1>Defend the lab.</h1>
+    <p class="lede">Clear the invaders while reagent capsules drift down every so often. Catch one — shoot it, or just let it arrive — and answer the synthesis question to upgrade your bullets.</p>
+    <ul class="rules">
+      <li>Arrow keys / A-D to move, Space to fire (or the on-screen buttons)</li>
+      <li>Bullets start as alkane (—), upgrade to alkene (=) then alkyne (≡) on correct answers — alkyne shots pierce through a whole column</li>
+      <li>A wrong answer costs a life and drops your bullet back a tier</li>
+      <li>Crystal bunkers give you cover — they take damage from either side and stay damaged</li>
+      <li>Invaders occasionally fire back, and reaching the bottom also costs a life</li>
+      <li>Every ~10s a shield pickup (hex with a shield icon) also drifts down — touch it or shoot it to block the next alien shot</li>
+      <li>8 questions total — score 70% or higher to pass</li>
+    </ul>
+
+    <div class="difficulty-select">
+      <span class="difficulty-label">Difficulty</span>
+      <div class="difficulty-options" role="group" aria-label="Difficulty">
+        <button type="button" class="diff-btn" data-diff="easy">Easy</button>
+        <button type="button" class="diff-btn active" data-diff="normal">Normal</button>
+        <button type="button" class="diff-btn" data-diff="hard">Hard</button>
+      </div>
+    </div>
+
+    <button id="btn-start" class="btn btn-primary">Start</button>
+  </main>
+
+  <main id="screen-game" class="screen hidden">
+    <div class="hud">
+      <span id="hud-lives" class="hud-item"></span>
+      <span id="hud-tier" class="hud-item"></span>
+      <span id="hud-questions" class="hud-item"></span>
+      <span id="hud-score" class="hud-item hud-score"></span>
+      <button id="btn-mute" class="hud-item hud-btn" aria-pressed="false" aria-label="Toggle sound"></button>
+      <button id="btn-pause" class="hud-item hud-btn" aria-label="Pause">Pause</button>
+    </div>
+
+    <div class="game-wrap">
+      <div class="game-frame">
+        <span class="frame-hex tl"></span>
+        <span class="frame-hex tr"></span>
+        <span class="frame-hex bl"></span>
+        <span class="frame-hex br"></span>
+        <canvas id="game-canvas" width="384" height="480"></canvas>
+        <div id="pause-overlay" class="pause-overlay hidden">
+          <div class="pause-card">
+            <h3>Paused</h3>
+            <button id="btn-resume" class="btn btn-primary">Resume</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls" aria-hidden="false">
+      <button id="ctl-left" class="ctl-btn ctl-move" aria-label="Left">◀</button>
+      <button id="ctl-fire" class="ctl-btn ctl-fire" aria-label="Fire">FIRE</button>
+      <button id="ctl-right" class="ctl-btn ctl-move" aria-label="Right">▶</button>
+    </div>
+
+    <div id="quiz-overlay" class="quiz-overlay hidden">
+      <div class="target-card">
+        <span id="q-count" class="puzzle-count"></span>
+        <h2 id="q-title" class="puzzle-title"></h2>
+        <div id="q-reaction" class="target-mol"></div>
+      </div>
+      <p class="instruction">Which reagents and conditions complete this synthesis?</p>
+      <div id="q-options" class="options-grid"></div>
+      <div id="q-feedback" class="feedback hidden">
+        <p id="q-feedback-text"></p>
+        <button id="btn-q-continue" class="btn btn-primary">Continue</button>
+      </div>
+    </div>
+  </main>
+
+  <main id="screen-end" class="screen hidden">
+    <h1 id="end-heading"></h1>
+    <p id="end-score" class="end-score"></p>
+    <div id="end-review" class="end-review"></div>
+    <button id="btn-restart" class="btn btn-secondary">Try again</button>
+  </main>
+
+</div>
+
+<script src="scormapi.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
