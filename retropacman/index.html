@@ -23,16 +23,20 @@
     <ul class="rules">
       <li>Arrow keys / WASD to move (or the on-screen pad)</li>
       <li>3 lives — ghost contact or a wrong answer costs one</li>
-      <li>In-game score: 1 point per dot, 5 per correct answer (just for fun — not sent to Moodle)</li>
+      <li>Grab a glowing catalyst pellet to make ghosts flee — catch one while it's fleeing to send it home and score bonus points</li>
+      <li>In-game score: 1 point per dot, 3 per pellet, 5 per correct answer, 10 per ghost caught (just for fun — not sent to Moodle)</li>
+      <li>Sound is off by default — use the speaker button to turn it on</li>
     </ul>
     <button id="btn-start" class="btn btn-primary">Start</button>
   </main>
 
   <main id="screen-game" class="screen hidden">
     <div class="hud">
+      <span id="hud-room" class="hud-item"></span>
       <span id="hud-lives" class="hud-item"></span>
       <span id="hud-checkpoints" class="hud-item"></span>
       <span id="hud-score" class="hud-item hud-score"></span>
+      <button id="hud-mute" class="hud-item hud-mute-btn" aria-label="Toggle sound" type="button"></button>
     </div>
 
     <div class="maze-wrap">
