@@ -1,24 +1,31 @@
+/* ============================================================
+   Dark lab theme — shared by the Disconnect// quiz and maze.
+   Deep navy to match the maze canvas (#10132A), with a faint
+   benzene-ring wallpaper echoing the maze's hexagon wall tiles.
+   ============================================================ */
 :root {
-  --bg-a: #EEF1FF;
-  --bg-b: #FDF1F6;
-  --card: #FFFFFF;
-  --card-tint: #FAFAFF;
-  --ink: #211C36;
-  --ink-soft: #6C6584;
-  --rule: #E3E1F2;
+  --bg-a: #080B1E;
+  --bg-b: #10132A;
+  --card: #161B3C;
+  --card-tint: #1D2350;
+  --ink: #E9EBFF;
+  --ink-soft: #A0A6CF;
+  --rule: #2B3168;
 
-  --primary: #6C5CE7;
-  --primary-dark: #4A38C4;
-  --accent2: #00BFA6;
-  --break: #FF6B4A;
+  --primary: #8B7BFF;
+  --primary-dark: #C3BAFF;
+  --accent2: #00D4B8;
+  --break: #FF7A5C;
+  --cut: #FF6B81;          /* the dashed red disconnection bond */
+  --gold: #F5D76E;
 
-  --correct: #16A970;
-  --correct-bg: #E3FAEF;
-  --incorrect: #F0455F;
-  --incorrect-bg: #FDE6EA;
+  --correct: #34D399;
+  --correct-bg: rgba(52, 211, 153, 0.14);
+  --incorrect: #FF5C74;
+  --incorrect-bg: rgba(255, 92, 116, 0.14);
 
-  --shadow: 0 6px 20px rgba(76, 60, 180, 0.10);
-  --shadow-sm: 0 2px 8px rgba(76, 60, 180, 0.07);
+  --shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
 
   --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
@@ -29,29 +36,24 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 55%, var(--bg-a) 100%);
-  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--sans);
   line-height: 1.5;
+  background-color: var(--bg-a);
+  background-image:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22260%22%20height%3D%22260%22%20fill%3D%22none%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M70.0%2052.0%20L59.0%2071.1%20L37.0%2071.1%20L26.0%2052.0%20L37.0%2032.9%20L59.0%2032.9%20Z%20M62.7%2054.1%20L57.1%2063.7%20M38.9%2063.7%20L33.3%2054.1%20M42.5%2038.3%20L53.5%2038.3%22%20stroke%3D%22rgba%280%2C212%2C184%2C0.10%29%22/%3E%3Cpath%20d%3D%22M203.9%2048.0%20L190.0%2056.0%20L176.1%2048.0%20L176.1%2032.0%20L190.0%2024.0%20L203.9%2032.0%20Z%20M198.5%2046.6%20L191.5%2050.7%20M180.0%2044.0%20L180.0%2036.0%20M191.5%2029.3%20L198.5%2033.4%22%20stroke%3D%22rgba%28139%2C123%2C255%2C0.12%29%22/%3E%3Cpath%20d%3D%22M172.5%20173.0%20L150.0%20186.0%20L127.5%20173.0%20L127.5%20147.0%20L150.0%20134.0%20L172.5%20147.0%20Z%20M163.8%20170.8%20L152.4%20177.3%20M133.8%20166.6%20L133.8%20153.4%20M152.4%20142.7%20L163.8%20149.2%22%20stroke%3D%22rgba%280%2C212%2C184%2C0.10%29%22/%3E%3Cpath%20d%3D%22M55.0%20205.0%20L47.5%20218.0%20L32.5%20218.0%20L25.0%20205.0%20L32.5%20192.0%20L47.5%20192.0%20Z%20M50.0%20206.4%20L46.2%20213.0%20M33.8%20213.0%20L30.0%20206.4%20M36.2%20195.6%20L43.8%20195.6%22%20stroke%3D%22rgba%28139%2C123%2C255%2C0.12%29%22/%3E%3Cpath%20d%3D%22M242.0%20225.0%20L236.0%20235.4%20L224.0%20235.4%20L218.0%20225.0%20L224.0%20214.6%20L236.0%20214.6%20Z%20M238.0%20226.1%20L235.0%20231.4%20M225.0%20231.4%20L222.0%20226.1%20M227.0%20217.5%20L233.0%20217.5%22%20stroke%3D%22rgba%280%2C212%2C184%2C0.10%29%22/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 70% 45% at 85% 8%, rgba(139, 123, 255, 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 5% 80%, rgba(0, 212, 184, 0.11), transparent 70%),
+    linear-gradient(180deg, var(--bg-b) 0%, var(--bg-a) 65%);
+  background-size: 260px 260px, 100% 100%, 100% 100%, 100% 100%;
+  background-attachment: fixed;
 }
 
-#app {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 0 20px 60px;
-}
+#app { max-width: 640px; margin: 0 auto; padding: 0 20px 60px; }
 
 /* ---- Masthead ---- */
-.masthead {
-  padding: 26px 0 16px;
-  margin-bottom: 28px;
-}
-.masthead-inner {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
+.masthead { padding: 26px 0 16px; margin-bottom: 22px; }
+.masthead-inner { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .wordmark {
   font-family: var(--serif);
   font-size: 1.6rem;
@@ -61,313 +63,205 @@ body {
   background-clip: text;
   color: transparent;
 }
-.wordmark-accent { color: var(--break); -webkit-text-fill-color: var(--break); }
-.tagline {
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-  font-style: italic;
-}
+.wordmark-accent { color: var(--cut); -webkit-text-fill-color: var(--cut); }
+.tagline { font-size: 0.85rem; color: var(--ink-soft); font-style: italic; }
 .progress-track {
-  margin-top: 14px;
-  height: 8px;
-  background: rgba(108, 92, 231, 0.12);
-  border-radius: 5px;
-  overflow: hidden;
+  margin-top: 14px; height: 8px;
+  background: rgba(139, 123, 255, 0.16);
+  border-radius: 5px; overflow: hidden;
 }
 .progress-fill {
-  height: 100%;
-  width: 0%;
+  height: 100%; width: 0%;
   background: linear-gradient(90deg, var(--primary), var(--accent2));
-  border-radius: 5px;
-  transition: width 0.35s ease;
+  border-radius: 5px; transition: width 0.35s ease;
 }
 
 /* ---- Screens ---- */
 .screen.hidden { display: none; }
-
 h1 {
   font-family: var(--serif);
-  font-size: 1.8rem;
-  line-height: 1.25;
-  margin: 0 0 14px;
-  color: var(--primary-dark);
+  font-size: 1.8rem; line-height: 1.25;
+  margin: 0 0 14px; color: var(--primary-dark);
 }
-.lede {
-  font-size: 1.02rem;
-  color: var(--ink);
-  max-width: 52ch;
-}
-.rules {
-  margin: 18px 0 26px;
-  padding-left: 20px;
-  color: var(--ink-soft);
-}
-.rules li { margin-bottom: 6px; }
+.lede { font-size: 1.02rem; color: var(--ink); max-width: 52ch; }
 
+/* ---- Condensed intro (hero + 3 tiles) ---- */
+.intro { text-align: center; }
+.intro-hero { display: flex; justify-content: center; margin: 0 0 12px; }
+.intro-hero svg { filter: drop-shadow(0 0 10px rgba(0, 212, 184, 0.45)); }
+.intro h1 {
+  font-size: 2rem; color: #fff; margin-bottom: 8px;
+  text-shadow: 0 0 18px rgba(139, 123, 255, 0.55);
+}
+.intro .lede { margin: 0 auto 20px; color: var(--ink-soft); }
+.intro-tiles { display: grid; gap: 10px; text-align: left; margin-bottom: 14px; }
+.tile {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  background: rgba(22, 27, 60, 0.85);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+}
+.tile p { margin: 0; font-size: 0.88rem; color: var(--ink-soft); line-height: 1.4; }
+.tile strong { color: var(--ink); }
+.tile-icon {
+  flex: 0 0 auto; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+}
+.intro-meta { font-size: 0.78rem; color: var(--ink-soft); margin: 0 0 20px; }
+
+/* ---- Buttons ---- */
 .btn {
-  font-family: var(--sans);
-  font-size: 0.95rem;
-  font-weight: 700;
-  padding: 13px 30px;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
+  font-family: var(--sans); font-size: 0.95rem; font-weight: 700;
+  padding: 13px 30px; border-radius: 999px; border: none; cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .btn:active { transform: scale(0.97); }
 .btn-primary {
   background: linear-gradient(100deg, var(--primary), var(--accent2));
-  color: #fff;
-  box-shadow: var(--shadow-sm);
+  color: #fff; box-shadow: var(--shadow-sm);
 }
-.btn-primary:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-.btn-secondary {
-  background: var(--card);
-  color: var(--primary-dark);
-  border: 1.5px solid var(--primary);
-}
+.btn-primary:hover { box-shadow: 0 0 18px rgba(0, 212, 184, 0.35); transform: translateY(-1px); }
+.btn-secondary { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary); }
 .btn-secondary:hover { background: var(--card-tint); }
 
 /* ---- Puzzle head ---- */
-.puzzle-head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
-}
+.puzzle-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
 .puzzle-count {
-  display: inline-block;
-  align-self: flex-start;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--primary-dark);
-  background: rgba(108, 92, 231, 0.12);
-  padding: 3px 10px;
-  border-radius: 999px;
+  display: inline-block; align-self: flex-start;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--primary-dark); background: rgba(139, 123, 255, 0.18);
+  padding: 3px 10px; border-radius: 999px;
 }
-.puzzle-title {
-  font-family: var(--serif);
-  font-size: 1.35rem;
-  margin: 4px 0 0;
-  color: var(--ink);
-}
+.puzzle-title { font-family: var(--serif); font-size: 1.35rem; margin: 4px 0 0; color: var(--ink); }
 
 /* ---- Target card ---- */
 .target-card {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: 16px;
-  padding: 20px 12px 16px;
-  margin-bottom: 22px;
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: 16px; padding: 20px 12px 16px; margin-bottom: 18px;
   box-shadow: var(--shadow);
 }
 .target-mol { width: 100%; display: flex; justify-content: center; }
 .target-mol svg { max-width: 100%; height: auto; }
-.hint {
-  text-align: center;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--break);
-  margin: 12px 0 0;
-}
+.hint { text-align: center; font-size: 0.82rem; font-weight: 600; color: var(--cut); margin: 12px 0 0; }
 
 /* ---- Options ---- */
-.options-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 480px) {
-  .options-grid { grid-template-columns: 1fr; }
-}
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .options-grid { grid-template-columns: 1fr; } }
 .option-card {
-  background: var(--card);
-  border: 2px solid var(--rule);
-  border-radius: 14px;
-  padding: 14px 10px;
-  cursor: pointer;
-  text-align: left;
+  background: var(--card); color: var(--ink);
+  border: 2px solid var(--rule); border-radius: 14px;
+  padding: 14px 10px; cursor: pointer; text-align: left;
+  font-family: var(--sans); box-shadow: var(--shadow-sm);
   transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
-  font-family: var(--sans);
-  box-shadow: var(--shadow-sm);
 }
-.option-card:hover:not(:disabled) {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
+.option-card:hover:not(:disabled) { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
 .option-card:disabled { cursor: default; }
 .option-card svg { max-width: 100%; height: auto; }
 .option-precursors {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  min-height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap; min-height: 64px;
 }
-.plus-sign {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--primary);
-}
-.option-condition {
-  display: block;
-  text-align: center;
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  margin-top: 8px;
-}
-.option-card.correct {
-  border-color: var(--correct);
-  background: var(--correct-bg);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-.option-card.incorrect {
-  border-color: var(--incorrect);
-  background: var(--incorrect-bg);
-}
+.plus-sign { font-size: 1.1rem; font-weight: 700; color: var(--accent2); }
+.option-condition { display: block; text-align: center; font-size: 0.8rem; color: var(--ink-soft); margin-top: 8px; }
+.option-condition strong { color: var(--ink); }
+.option-card.correct { border-color: var(--correct); background: linear-gradient(var(--correct-bg), var(--correct-bg)), var(--card); transform: translateY(-2px); box-shadow: var(--shadow); }
+.option-card.incorrect { border-color: var(--incorrect); background: linear-gradient(var(--incorrect-bg), var(--incorrect-bg)), var(--card); }
 
 /* ---- Feedback ---- */
 .feedback {
-  margin-top: 20px;
-  padding: 18px;
-  border-radius: 14px;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  box-shadow: var(--shadow-sm);
+  margin-top: 20px; padding: 18px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--rule); box-shadow: var(--shadow-sm);
 }
 .feedback.hidden { display: none; }
-#feedback-text {
-  margin: 0 0 14px;
-  font-size: 0.95rem;
-}
+.feedback p { margin: 0 0 14px; font-size: 0.95rem; }
 
 /* ---- End screen ---- */
-.end-score {
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  color: var(--primary-dark);
-  margin-bottom: 24px;
-}
-.end-review {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 28px;
-}
+.end-score { font-family: var(--serif); font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 24px; }
+.end-review { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
 .review-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  font-size: 0.9rem;
-  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 10px; background: var(--card); border: 1px solid var(--rule);
+  font-size: 0.9rem; box-shadow: var(--shadow-sm);
 }
-.review-mark {
-  font-weight: 700;
-  width: 18px;
-  text-align: center;
-}
+.review-mark { font-weight: 700; width: 18px; text-align: center; }
 .review-row.correct .review-mark { color: var(--correct); }
 .review-row.incorrect .review-mark { color: var(--incorrect); }
 
-/* ---- Molecule SVG shared styles ----
-   Structures stay dark-on-white for clarity, regardless of the app's
-   accent palette — legibility of the chemistry comes first. */
-.mol .ring-hex { fill: none; stroke: var(--ink); stroke-width: 2; }
-.mol .ring-circle { fill: none; stroke: var(--ink); stroke-width: 1.4; }
-.mol .atom-label { font-family: var(--sans); font-size: 13px; fill: var(--ink); }
-.mol .bond-cond { font-family: var(--sans); font-size: 9.5px; fill: var(--ink-soft); font-style: italic; }
+/* ---- Structures (chem.js draws in currentColor; cut bond uses --cut) ---- */
+.mol { color: var(--ink); display: block; }
 
-/* ---- Maze prototype additions ---- */
+/* ---- Maze intro icons ---- */
+.icon-checkpoint {
+  border-radius: 50%; background: #FF6B4A; color: #10132A;
+  font-size: 1.05rem; box-shadow: 0 0 12px rgba(255, 107, 74, 0.45);
+}
+.icon-heart { color: var(--cut); font-size: 1.5rem; text-shadow: 0 0 10px rgba(255, 107, 129, 0.5); }
+.icon-pellet b {
+  display: block; width: 16px; height: 16px; border-radius: 50%;
+  background: #00E5C7; box-shadow: 0 0 12px rgba(0, 229, 199, 0.7);
+}
+
+/* ---- Difficulty selector ---- */
+.difficulty-select { margin: 4px 0 22px; }
+.difficulty-label {
+  display: block; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--ink-soft); margin-bottom: 8px;
+}
+.difficulty-options { display: flex; gap: 8px; justify-content: center; }
+.diff-btn {
+  font-family: var(--sans); font-size: 0.88rem; font-weight: 700;
+  padding: 9px 18px; border-radius: 999px;
+  border: 1.5px solid var(--rule); background: var(--card); color: var(--ink-soft);
+  cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.diff-btn:hover { border-color: var(--primary); }
+.diff-btn.active { border-color: transparent; background: linear-gradient(100deg, var(--primary), var(--accent2)); color: #fff; }
+
+/* ---- HUD ---- */
 .hud {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--primary-dark);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 6px; margin-bottom: 10px;
+  font-weight: 700; font-size: 0.88rem; color: var(--primary-dark);
 }
 .hud-item {
-  background: var(--card);
-  border-radius: 999px;
-  padding: 6px 14px;
-  box-shadow: var(--shadow-sm);
+  background: rgba(22, 27, 60, 0.9); border: 1px solid var(--rule);
+  border-radius: 999px; padding: 6px 14px;
 }
+.hud-lives { color: var(--cut); }
+.hud-score { color: var(--accent2); }
+.hud-mute-btn { font-size: 0.95rem; line-height: 1; padding: 6px 12px; cursor: pointer; color: inherit; }
+.hud-mute-btn:active { transform: scale(0.95); }
 
-.maze-wrap {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
+/* ---- Maze ---- */
+.maze-wrap { position: relative; display: flex; justify-content: center; margin-bottom: 16px; }
 #maze {
-  background: #10132A;
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  max-width: 100%;
-  height: auto;
-  display: block;
+  background: #10132A; border-radius: 14px;
+  border: 1px solid var(--rule);
+  box-shadow: 0 0 0 1px rgba(0, 212, 184, 0.12), 0 0 26px rgba(139, 123, 255, 0.22), var(--shadow);
+  max-width: 100%; height: auto; display: block;
 }
 
-/* The quiz is no longer boxed into the small maze canvas — while it's up,
-   the maze/controls are hidden (see game.js) and this takes over the full
-   app width instead, same as the original quiz screen, so molecules and
-   options are readable without scrolling on a small phone screen. */
-.quiz-overlay {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.quiz-overlay.hidden { display: none; }
-.maze-wrap.hidden { display: none; }
-.dpad.hidden { display: none; }
+/* The quiz takes over the full app width while it's up (maze + pad hidden,
+   see game.js) so molecules and options are readable without scrolling. */
+.quiz-overlay { display: flex; flex-direction: column; gap: 12px; }
+.quiz-overlay .target-card { margin-bottom: 0; }
+.quiz-overlay .puzzle-title { margin-bottom: 10px; }
+.quiz-overlay.hidden, .maze-wrap.hidden, .dpad.hidden { display: none; }
 
+/* ---- On-screen pad ---- */
 .dpad {
-  display: grid;
-  grid-template-columns: 56px 56px 56px;
-  grid-template-rows: 48px 48px;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 4px;
+  display: grid; grid-template-columns: 56px 56px 56px; grid-template-rows: 48px 48px;
+  gap: 6px; justify-content: center; margin-top: 4px;
 }
 .dp-btn {
-  font-size: 1.1rem;
-  border: none;
-  border-radius: 10px;
-  background: var(--card);
-  color: var(--primary-dark);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
+  font-size: 1.1rem; border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--card); color: var(--primary-dark); box-shadow: var(--shadow-sm); cursor: pointer;
 }
 .dp-btn:active { background: var(--primary); color: #fff; }
 .dp-up { grid-column: 2; grid-row: 1; }
 .dp-left { grid-column: 1; grid-row: 2; }
 .dp-right { grid-column: 3; grid-row: 2; }
 .dp-down { grid-column: 2; grid-row: 2; }
-
-@media (min-width: 620px) {
-  .dpad { display: none; } /* desktop: keyboard only, saves space */
-}
-
-/* ---- Full-game additions ---- */
-.hud { flex-wrap: wrap; gap: 6px; align-items: center; }
-.hud-score { color: var(--accent2); }
-.hud-mute-btn {
-  border: none;
-  border-radius: 999px;
-  background: var(--card);
-  box-shadow: var(--shadow-sm);
-  padding: 6px 12px;
-  font-size: 0.95rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.hud-mute-btn:active { transform: scale(0.95); }
+@media (min-width: 620px) { .dpad { display: none; } }

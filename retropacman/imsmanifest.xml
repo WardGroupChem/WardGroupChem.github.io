@@ -25,6 +25,8 @@
     <resource identifier="RESOURCE_1" type="webcontent" adlcp:scormtype="sco" href="index.html">
       <file href="index.html" />
       <file href="style.css" />
+      <file href="chem.js" />
+      <file href="puzzles.js" />
       <file href="game.js" />
       <file href="scormapi.js" />
     </resource>

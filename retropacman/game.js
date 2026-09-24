@@ -1,538 +1,8 @@
 /* ============================================================
-   MOLECULE RENDERER  (v2 — true skeletal style)
-   A molecule is { atoms: [...], bonds: [...] }.
-   atoms[i] is one of:
-     RING()            benzene ring icon
-     C()               implicit carbon vertex (no label, plain kink)
-     C(BR(...))         implicit carbon vertex carrying a branch group
-     LBL('OH')         an explicit heteroatom / group, inline or terminal
-   bonds[i] is 'single' or 'double' for the bond between atoms[i] and atoms[i+1]
-   (defaults to 'single' if omitted).
-   Every molecule is drawn at the SAME bond length / font size in real
-   pixels, so target and option diagrams are always visually consistent.
+   Disconnect// maze — game logic.
+   Structures: chem.js (SMILES -> SVG). Puzzle data: puzzles.js
+   (shared with the standalone quiz, so both always match).
    ============================================================ */
-
-var BOND = 30;      // px, default backbone bond length (stretched if a wide label needs more room)
-var RING_R = 15;     // px, ring icon radius
-var BRANCH_LEN = 24; // px, default vertical branch bond length
-var FONT_SIZE = 13;  // px, atom label font size (matches CSS .atom-label)
-var DBL_OFFSET = 2.6; // px, gap between parallel lines of a double bond
-var MIN_SEG = 7;      // px, minimum visible line length once end-padding is subtracted
-
-function RING() { return { t: 'ring' }; }
-function C(branch) { return branch ? { t: 'c', branch: branch } : { t: 'c' }; }
-function LBL(text) { return { t: 'label', text: text }; }
-function BR(text, dir, bond) { return { text: text, dir: dir || 'up', bond: bond || 'single' }; }
-// C3: a standalone carbon fully drawn out with several substituents placed at
-// explicit angles (degrees, 0=right, 90=down, -90=up), each 120 degrees apart —
-// used for small molecules like formaldehyde where every substituent (incl. H)
-// needs to be shown, rather than an implicit chain vertex.
-function C3(branches) { return { t: 'c3', branches: branches }; }
-function BR3(text, angleDeg, bond) { return { text: text, angle: angleDeg, bond: bond || 'single' }; }
-function MOL(atoms, bonds) { return { atoms: atoms, bonds: bonds || [] }; }
-
-function textHalfWidth(text) {
-  return Math.max(6, text.length * 3.35 + 2);
-}
-
-function ringIconSVG(cx, cy, r) {
-  var pts = [];
-  for (var k = 0; k < 6; k++) {
-    var ang = (Math.PI / 180) * (60 * k - 90);
-    pts.push((cx + r * Math.cos(ang)).toFixed(1) + ',' + (cy + r * Math.sin(ang)).toFixed(1));
-  }
-  return '<polygon points="' + pts.join(' ') + '" class="ring-hex"/>' +
-         '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * 0.55).toFixed(1) + '" class="ring-circle"/>';
-}
-
-function lineSVG(x1, y1, x2, y2, dashed) {
-  return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
-    '" stroke="' + (dashed ? 'var(--break)' : 'var(--ink)') + '" stroke-width="' + (dashed ? 2.4 : 2) +
-    '" stroke-dasharray="' + (dashed ? '5,4' : '0') + '" stroke-linecap="round"/>';
-}
-
-function formatChemText(text) {
-  var out = '';
-  for (var i = 0; i < text.length; i++) {
-    var ch = text[i];
-    if (ch >= '0' && ch <= '9') {
-      out += '<tspan baseline-shift="sub" font-size="72%">' + ch + '</tspan>';
-    } else {
-      out += ch;
-    }
-  }
-  return out;
-}
-
-function labelSVG(x, y, text) {
-  return '<text x="' + x.toFixed(1) + '" y="' + (y + FONT_SIZE * 0.36).toFixed(1) + '" text-anchor="middle" class="atom-label">' + formatChemText(text) + '</text>';
-}
-
-// End-padding (how far from the vertex centre a bond line should stop)
-function endPad(atom) {
-  if (atom.t === 'ring') return RING_R;
-  if (atom.t === 'label') return textHalfWidth(atom.text);
-  return 0; // plain implicit-carbon vertex — line runs straight through it
-}
-
-// Determines, for each backbone bond, whether it steps "up" (-1) or "down" (+1).
-// A branched atom (carbonyl, OH, etc.) must sit at a true peak/valley so its two
-// backbone neighbours both angle away from the branch at 120 degrees (branch up
-// -> both neighbours go down; branch down -> both neighbours go up).
-function computeSegSigns(atoms, bonds) {
-  var n = atoms.length;
-  var branchIdx = -1;
-  for (var i = 0; i < n; i++) {
-    if (atoms[i].t === 'c' && atoms[i].branch) { branchIdx = i; break; }
-  }
-  var s0 = 1;
-  if (branchIdx > 0) {
-    var required = (atoms[branchIdx].branch.dir === 'down') ? 1 : -1; // sign of segSign[branchIdx-1]
-    var parityPow = ((branchIdx - 1) % 2 === 0) ? 1 : -1;
-    s0 = required * parityPow;
-  }
-  var segSign = [];
-  for (i = 0; i < n - 1; i++) segSign.push(s0 * ((i % 2 === 0) ? 1 : -1));
-
-  // A triple bond is linear (sp carbon, 180 degrees) — the bond itself and
-  // both its neighbouring bonds must be collinear. Rather than forcing them
-  // flat (which would land a ring attachment in the gap between two vertices,
-  // since the hexagon's vertices sit at +-30/+-90/+-150 degrees, not 0), they
-  // all take the SAME sign as the bond immediately before the triple bond, so
-  // the whole straight run continues at the usual +-30 degree bond angle —
-  // still perfectly collinear, but landing exactly on a ring vertex.
-  bonds = bonds || [];
-  for (i = 0; i < n - 1; i++) {
-    if (bonds[i] === 'triple') {
-      var s = (i - 1 >= 0) ? segSign[i - 1] : segSign[i];
-      segSign[i] = s;
-      if (i + 1 <= n - 2) segSign[i + 1] = s;
-    }
-  }
-  return segSign;
-}
-
-function drawBond(x1, y1, x2, y2, pad1, pad2, order, dashed) {
-  order = order === true ? 'double' : (order === false ? 'single' : (order || 'single'));
-  var dx = x2 - x1, dy = y2 - y1;
-  var len = Math.sqrt(dx * dx + dy * dy) || 1;
-  var ux = dx / len, uy = dy / len;
-  // Guarantee a minimum visible segment even if padding is large relative to length
-  if (pad1 + pad2 + MIN_SEG > len) {
-    var scale = (len - MIN_SEG) / (pad1 + pad2 || 1);
-    if (scale < 0) scale = 0;
-    pad1 *= scale; pad2 *= scale;
-  }
-  var ax = x1 + ux * pad1, ay = y1 + uy * pad1;
-  var bx = x2 - ux * pad2, by = y2 - uy * pad2;
-  if (order === 'single') return lineSVG(ax, ay, bx, by, dashed);
-  if (order === 'double') {
-    var px = -uy * DBL_OFFSET, py = ux * DBL_OFFSET;
-    return lineSVG(ax + px, ay + py, bx + px, by + py, dashed) +
-           lineSVG(ax - px, ay - py, bx - px, by - py, dashed);
-  }
-  // triple: centre line plus two parallel outer lines
-  var px2 = -uy * DBL_OFFSET * 1.15, py2 = ux * DBL_OFFSET * 1.15;
-  return lineSVG(ax, ay, bx, by, dashed) +
-         lineSVG(ax + px2, ay + py2, bx + px2, by + py2, dashed) +
-         lineSVG(ax - px2, ay - py2, bx - px2, by - py2, dashed);
-}
-
-function renderMol(mol, opts) {
-  opts = opts || {};
-  var atoms = mol.atoms, bonds = mol.bonds || [];
-  var n = atoms.length;
-  var highlightBond = opts.highlightBond;
-  var segSign = computeSegSigns(atoms, bonds);
-
-  // Each bond gets its own length: the default BOND, or longer if the two
-  // atoms it connects need more clearance for their labels (avoids the
-  // ring/label overlap and vanishing-line bugs with wide labels).
-  var pos = [{ x: 0, y: 0 }];
-  for (var i = 0; i < n - 1; i++) {
-    var pad1 = endPad(atoms[i]), pad2 = endPad(atoms[i + 1]);
-    var segLen = Math.max(BOND, pad1 + pad2 + MIN_SEG + 4);
-    var sdx, sdy;
-    if (segSign[i] === 0) {
-      // part of a linear (triple-bond) run — straight, full-length segment
-      sdx = segLen; sdy = 0;
-    } else {
-      sdx = segLen * Math.cos(Math.PI / 6);
-      sdy = segSign[i] * segLen * Math.sin(Math.PI / 6);
-    }
-    pos.push({ x: pos[i].x + sdx, y: pos[i].y + sdy });
-  }
-
-  var body = '';
-  var minX = 0, maxX = 0, minY = 0, maxY = 0;
-
-  function track(x, y) {
-    if (x < minX) minX = x; if (x > maxX) maxX = x;
-    if (y < minY) minY = y; if (y > maxY) maxY = y;
-  }
-  for (i = 0; i < n; i++) {
-    var pad = endPad(atoms[i]);
-    track(pos[i].x - pad, pos[i].y - pad);
-    track(pos[i].x + pad, pos[i].y + pad);
-  }
-
-  // backbone bonds
-  for (i = 0; i < n - 1; i++) {
-    var order = bonds[i] || 'single';
-    var isHi = (i === highlightBond);
-    body += drawBond(pos[i].x, pos[i].y, pos[i + 1].x, pos[i + 1].y, endPad(atoms[i]), endPad(atoms[i + 1]), order, isHi);
-  }
-
-  // branches (single substituent hanging off a backbone carbon, e.g. C=O, OH)
-  for (i = 0; i < n; i++) {
-    var a = atoms[i];
-    if (a.t === 'c' && a.branch) {
-      var vert = (a.branch.dir === 'down') ? 1 : -1;
-      var labelPad = textHalfWidth(a.branch.text);
-      var branchLen = Math.max(BRANCH_LEN, labelPad + MIN_SEG + 4);
-      var bx = pos[i].x, by = pos[i].y + vert * branchLen;
-      body += drawBond(pos[i].x, pos[i].y, bx, by, 0, labelPad, a.branch.bond || 'single', false);
-      body += labelSVG(bx, by, a.branch.text);
-      track(bx - labelPad, by - 10);
-      track(bx + labelPad, by + 10);
-    }
-    // c3: a standalone, fully-drawn-out carbon (e.g. formaldehyde) with several
-    // substituents at explicit angles, each 120 degrees apart from the next.
-    if (a.t === 'c3') {
-      a.branches.forEach(function (br) {
-        var rad = br.angle * Math.PI / 180;
-        var lp = textHalfWidth(br.text);
-        var bl = Math.max(BRANCH_LEN, lp + MIN_SEG + 4);
-        var ex = pos[i].x + bl * Math.cos(rad);
-        var ey = pos[i].y + bl * Math.sin(rad);
-        body += drawBond(pos[i].x, pos[i].y, ex, ey, 0, lp, br.bond || 'single', false);
-        body += labelSVG(ex, ey, br.text);
-        track(ex - lp, ey - 10);
-        track(ex + lp, ey + 10);
-      });
-    }
-  }
-
-  // atom glyphs (rings + labels) drawn after bonds so they sit on top
-  for (i = 0; i < n; i++) {
-    if (atoms[i].t === 'ring') {
-      body += ringIconSVG(pos[i].x, pos[i].y, RING_R);
-    } else if (atoms[i].t === 'label') {
-      body += labelSVG(pos[i].x, pos[i].y, atoms[i].text);
-    }
-  }
-
-  var margin = 8;
-  var w = (maxX - minX) + margin * 2;
-  var h = (maxY - minY) + margin * 2;
-  var offX = margin - minX, offY = margin - minY;
-
-  return '<svg viewBox="0 0 ' + w.toFixed(1) + ' ' + h.toFixed(1) + '" width="' + w.toFixed(0) + '" height="' + h.toFixed(0) +
-    '" xmlns="http://www.w3.org/2000/svg" class="mol"><g transform="translate(' + offX.toFixed(1) + ',' + offY.toFixed(1) + ')">' +
-    body + '</g></svg>';
-}
-
-function renderPrecursorPair(mol1, mol2) {
-  var html = '<div class="option-precursors">';
-  html += renderMol(mol1);
-  if (mol2) {
-    html += '<span class="plus-sign">+</span>';
-    html += renderMol(mol2);
-  }
-  html += '</div>';
-  return html;
-}
-
-/* ============================================================
-   PUZZLE DATA — all 8, split 4/4 across two linked maze rooms
-   ============================================================ */
-
-var PUZZLES = [
-  {
-    title: 'Ethyl benzoate',
-    target: MOL([RING(), C(BR('O', 'up', 'double')), LBL('O'), C(), C()]),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double')), LBL('OH')]),
-        mol2: MOL([C(), C(), LBL('OH')]),
-        condition: 'H⁺, heat',
-        label: 'Benzoic acid + Ethanol',
-        explain: 'Correct — disconnecting the acyl–oxygen bond gives benzoic acid and ethanol. Forward direction: Fischer esterification (acid + alcohol, H⁺ catalyst).'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), LBL('OH')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('OH')]),
-        label: 'Benzyl alcohol + Acetic acid',
-        explain: 'The acyl and alkyl portions are swapped — this pair would give benzyl acetate, not ethyl benzoate.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('OH')]),
-        mol2: MOL([C(), C(), C(BR('O', 'up', 'double')), LBL('OH')]),
-        label: 'Phenol + Propanoic acid',
-        explain: 'Wrong connectivity and chain length — this would give phenyl propanoate, a different ester entirely.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double')), LBL('Cl')]),
-        mol2: MOL([C(), C(), C(), LBL('OH')]),
-        label: 'Benzoyl chloride + Propan-1-ol',
-        explain: 'The acyl chloride is a reasonable acylating agent, but the alcohol has one carbon too many — this gives propyl benzoate.'
-      }
-    ]
-  },
-  {
-    title: 'Acetanilide',
-    target: MOL([RING(), LBL('NH'), C(BR('O', 'up', 'double')), C()]),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), LBL('NH2')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('Cl')]),
-        condition: 'base',
-        label: 'Aniline + Acetyl chloride',
-        explain: 'Correct — disconnecting the N–C(=O) bond gives aniline and acetyl chloride. Forward direction: acylation of the amine.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double')), LBL('NH2')]),
-        mol2: MOL([C(), LBL('NH2')]),
-        label: 'Benzamide + Methylamine',
-        explain: 'This breaks a different bond and swaps which fragment carries the carbonyl — it leads to N-methylbenzamide, an isomeric but different amide.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('NO2')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('Cl')]),
-        label: 'Nitrobenzene + Acetyl chloride',
-        explain: 'Nitrobenzene has the wrong oxidation state at nitrogen — it would need reduction to aniline first before this disconnection applies.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('OH')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('NH2')]),
-        label: 'Phenol + Acetamide',
-        explain: 'This pair of functional groups does not combine to form the marked N–C bond — it points toward an ester, not an amide.'
-      }
-    ]
-  },
-  {
-    title: '1-Phenylethanol',
-    target: MOL([RING(), C(BR('OH', 'up', 'single')), C()]),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double'))]),
-        mol2: MOL([C(), LBL('MgBr')]),
-        condition: 'then H₃O⁺',
-        label: 'Benzaldehyde + Methylmagnesium bromide',
-        explain: 'Correct — the C–CH3 bond next to the alcohol is disconnected as a Grignard addition: the methyl nucleophile adds to the aldehyde carbonyl.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double')), C()]),
-        label: 'Acetophenone (alone)',
-        explain: 'This is the oxidised ketone, not a disconnection — reducing it would work synthetically, but it does not break the marked C–C bond retrosynthetically.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('MgBr')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double'))]),
-        label: 'Phenylmagnesium bromide + Acetaldehyde',
-        explain: 'This breaks the Ph–C bond instead of the marked C–CH3 bond — a valid Grignard route to the same product, but not the disconnection shown here.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), C()]),
-        label: 'Ethylbenzene (alone)',
-        explain: 'There is no bond-forming logic here — this is simply the deoxygenated hydrocarbon, not a retrosynthetic precursor pair.'
-      }
-    ]
-  },
-  {
-    title: 'Diphenylmethanol',
-    target: MOL([RING(), C(BR('OH', 'up', 'single')), RING()]),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double'))]),
-        mol2: MOL([RING(), LBL('MgBr')]),
-        condition: 'then H₃O⁺',
-        label: 'Benzaldehyde + Phenylmagnesium bromide',
-        explain: 'Correct — disconnecting the marked C–Ph bond gives benzaldehyde and a phenyl Grignard, which adds to the carbonyl.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double')), RING()]),
-        label: 'Benzophenone (alone)',
-        explain: 'This is the oxidised ketone. Reduction (e.g. NaBH4) gets you to the product, but it is not a disconnection of the marked bond.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), RING()]),
-        label: 'Diphenylmethane (alone)',
-        explain: 'This lacks the oxygen entirely and has no bond-forming step that reconnects to give the alcohol.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), RING()]),
-        mol2: MOL([C3([BR3('O', -90, 'double'), BR3('H', 30, 'single'), BR3('H', 150, 'single')])]),
-        label: 'Biphenyl + Formaldehyde',
-        explain: 'Wrong connectivity — biphenyl already has the two rings joined directly, which is not the bond pattern in the target.'
-      }
-    ]
-  },
-  {
-    title: '(E)-Stilbene',
-    target: MOL([RING(), C(), C(), RING()], ['single', 'double', 'single']),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), C(BR('O', 'up', 'double'))]),
-        mol2: MOL([RING(), C(BR('PPh3', 'up', 'double'))]),
-        condition: 'Wittig',
-        label: 'Benzaldehyde + a benzylidene phosphorus ylide',
-        explain: 'Correct — the C=C bond disconnects into an aldehyde and a phosphorus ylide (Ph–CH=PPh3), the classic Wittig retrosynthesis for alkenes.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), C(), RING()]),
-        label: 'Bibenzyl (alone)',
-        explain: 'This is the saturated analogue — there is no simple substitution that installs a C=C bond from this starting material.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), LBL('Br')]),
-        mol2: MOL([RING(), C(), LBL('Br')]),
-        condition: 'base',
-        label: 'Two equivalents of benzyl bromide',
-        explain: 'Simple deprotonation/alkylation of two benzyl halides does not form a C=C bond by any standard one-step method taught at this level.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C(), C(), LBL('H')], ['single', 'triple', 'single']),
-        mol2: MOL([RING(), LBL('H')]),
-        label: 'Phenylacetylene + Benzene',
-        explain: 'This mixes an alkyne fragment with unfunctionalised benzene — there is no reasonable bond-forming step linking these to the target alkene.'
-      }
-    ]
-  },
-  {
-    title: 'Acetophenone',
-    target: MOL([RING(), C(BR('O', 'up', 'double')), C()]),
-    highlightBond: 0,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING()]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('Cl')]),
-        condition: 'AlCl3',
-        label: 'Benzene + Acetyl chloride',
-        explain: 'Correct — disconnecting the aryl–carbonyl bond gives benzene and acetyl chloride: a Friedel–Crafts acylation.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('Cl')]),
-        mol2: MOL([C(), C(BR('O', 'up', 'double')), LBL('OH')]),
-        label: 'Chlorobenzene + Acetic acid',
-        explain: 'Aryl halides do not undergo Friedel–Crafts acylation as the nucleophile in this way — the ring needs to be the nucleophile, not pre-halogenated.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C()]),
-        label: 'Toluene (alone)',
-        explain: 'This is the wrong oxidation pattern — oxidising the methyl group of toluene gives benzoic acid, not a ring-attached ketone.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('MgBr')]),
-        mol2: MOL([C(), LBL('C≡N')]),
-        label: 'Phenylmagnesium bromide + Acetonitrile',
-        explain: 'This combination (Grignard + nitrile) is a more advanced route to the same product class, not the Friedel–Crafts disconnection being tested here.'
-      }
-    ]
-  },
-  {
-    title: 'tert-Butylbenzene',
-    target: MOL([RING(), LBL('C(CH3)3')]),
-    highlightBond: 0,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING()]),
-        mol2: MOL([LBL('(CH3)3C'), LBL('Cl')]),
-        condition: 'AlCl3',
-        label: 'Benzene + tert-Butyl chloride',
-        explain: 'Correct — disconnecting the aryl–alkyl bond gives benzene and tert-butyl chloride: a Friedel–Crafts alkylation, favoured because the tertiary carbocation is stable.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('Br')]),
-        mol2: MOL([LBL('(CH3)3C'), LBL('MgBr')]),
-        label: 'Bromobenzene + tert-Butylmagnesium bromide',
-        explain: 'Two organometallic-style fragments do not couple directly under simple conditions — this is not the standard aromatic alkylation route.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), C()]),
-        mol2: MOL([C(), C()]),
-        label: 'Toluene + two methyl fragments',
-        explain: 'There is no real bond-forming step here — "adding" separate methyl fragments to toluene is not a valid disconnection.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('OH')]),
-        mol2: MOL([LBL('(CH3)3C'), LBL('Cl')]),
-        label: 'Phenol + tert-Butyl chloride',
-        explain: 'With phenol, the more nucleophilic oxygen would be alkylated instead, giving an ether — not the C-alkylated product shown.'
-      }
-    ]
-  },
-  {
-    title: 'Anisole',
-    target: MOL([RING(), LBL('O'), C()]),
-    highlightBond: 1,
-    options: [
-      {
-        correct: true,
-        mol1: MOL([RING(), LBL('OH')]),
-        mol2: MOL([C(), LBL('I')]),
-        condition: 'K2CO3',
-        label: 'Phenol + Methyl iodide',
-        explain: 'Correct — disconnecting the O–CH3 bond gives phenol and methyl iodide: a Williamson ether synthesis (phenoxide attacks the methyl halide).'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('Cl')]),
-        mol2: MOL([C(), LBL('OH')]),
-        label: 'Chlorobenzene + Methanol',
-        explain: 'Aryl chlorides are far too unreactive towards simple SN2 substitution by an alkoxide under standard conditions.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING()]),
-        mol2: MOL([C(), LBL('OH')]),
-        label: 'Benzene + Methanol',
-        explain: 'This does not disconnect the marked O–CH3 bond at all, and there is no direct coupling method joining these two as written.'
-      },
-      {
-        correct: false,
-        mol1: MOL([RING(), LBL('OH')]),
-        mol2: MOL([C(), LBL('OH')]),
-        condition: 'H2SO4',
-        label: 'Phenol + Methanol',
-        explain: 'Simple acid-catalysed conditions do not effectively form aryl alkyl ethers this way — a good leaving group on the methyl partner is needed instead.'
-      }
-    ]
-  }
-];
 
 /* ============================================================
    MAZE ENGINE — two linked rooms, progressive ghosts, live score
@@ -552,7 +22,23 @@ var ghostStepFrames = BASE_GHOST_STEP_FRAMES;
 
 // Ghosts occasionally break off their chase for a short "scatter" burst of
 // semi-random movement, so they feel less mechanically perfect.
-var SCATTER_CHANCE = 0.15;
+/* ---- Difficulty presets (chosen on the intro screen) ----
+   Player speed is the same on every setting so the controls always feel
+   the same; difficulty only changes the ghosts.
+     ghostSpeed  multiplier on ghost frames-per-cell (>1 = slower ghosts)
+     ghostDelta  ghosts removed from each room's starting count
+     bonusGhost  whether the extra ghost joins after question 7
+     flee        multiplier on how long catalyst pellets make ghosts flee
+     scatter     chance a ghost breaks into random wandering at a junction */
+var DIFFICULTY_PRESETS = {
+  easy:   { label: 'Easy',   ghostSpeed: 1.25, ghostDelta: 1, bonusGhost: false, flee: 1.5,  scatter: 0.22 },
+  normal: { label: 'Normal', ghostSpeed: 1.0,  ghostDelta: 0, bonusGhost: true,  flee: 1.0,  scatter: 0.15 },
+  hard:   { label: 'Hard',   ghostSpeed: 0.85, ghostDelta: 0, bonusGhost: true,  flee: 0.75, scatter: 0.08 }
+};
+var difficulty = 'normal';
+function preset() { return DIFFICULTY_PRESETS[difficulty] || DIFFICULTY_PRESETS.normal; }
+
+var SCATTER_CHANCE = 0.15; // overwritten from the preset at game start
 var SCATTER_DURATION_FRAMES = BASE_GHOST_STEP_FRAMES * 3;
 
 // Catalyst pellets make every ghost flee (and become eatable) for this long.
@@ -691,12 +177,12 @@ var game = {
 function applyRoomSpeed(roomIdx) {
   if (roomIdx === 0) {
     playerStepFrames = BASE_PLAYER_STEP_FRAMES;
-    ghostStepFrames = BASE_GHOST_STEP_FRAMES;
+    ghostStepFrames = Math.round(BASE_GHOST_STEP_FRAMES * preset().ghostSpeed);
   } else {
     // ~10% faster (fewer frames per cell) — a small escalation on top of
     // the extra ghost count, so room 2 reads as a genuine step up.
     playerStepFrames = Math.round(BASE_PLAYER_STEP_FRAMES * 0.9);
-    ghostStepFrames = Math.round(BASE_GHOST_STEP_FRAMES * 0.9);
+    ghostStepFrames = Math.round(BASE_GHOST_STEP_FRAMES * 0.9 * preset().ghostSpeed);
   }
 }
 
@@ -707,7 +193,10 @@ function loadRoom(roomIdx) {
   parseRoom(roomIdx, order);
   resetPlayer();
   ghosts = [];
-  for (var i = 0; i < room.ghostCount; i++) {
+  // spawns are listed farthest-first in each room, so Easy drops the
+  // ghost that starts closest to the player
+  var nGhosts = Math.max(1, room.ghostCount - preset().ghostDelta);
+  for (var i = 0; i < nGhosts; i++) {
     var s = ghostSpawns[i % ghostSpawns.length];
     ghosts.push(makeGhost(s.col, s.row, GHOST_COLORS[i]));
   }
@@ -722,6 +211,7 @@ function localSolvedCountInRoom(roomIdx) {
 
 function maybeSpawnBonusGhosts() {
   var room = ROOMS[game.room];
+  if (!preset().bonusGhost) return;
   room.bonusGhosts.forEach(function (bg) {
     var already = ghosts.some(function (g) { return g.color === bg.color; });
     if (!already && localSolvedCountInRoom(game.room) >= bg.afterLocalSolved) {
@@ -743,7 +233,7 @@ function updatePlayer() {
     if (pellets[key]) {
       delete pellets[key];
       game.liveScore += 3;
-      game.fleeUntilFrame = game.frameCount + FLEE_DURATION_FRAMES;
+      game.fleeUntilFrame = game.frameCount + Math.round(FLEE_DURATION_FRAMES * preset().flee);
       playSound('powerUp');
       updateHud();
     }
@@ -886,7 +376,7 @@ function triggerCheckpoint(pIdx, key) {
 
   $('q-count').textContent = 'Question ' + (pIdx + 1) + ' of ' + PUZZLES.length;
   $('q-title').textContent = puzzle.title;
-  $('q-target').innerHTML = renderMol(puzzle.target, { highlightBond: puzzle.highlightBond });
+  $('q-target').innerHTML = Chem.svg(puzzle.target, { scale: 1.2, title: puzzle.title });
 
   var shuffled = shuffle(puzzle.options);
   var optsEl = $('q-options');
@@ -896,8 +386,8 @@ function triggerCheckpoint(pIdx, key) {
   shuffled.forEach(function (opt) {
     var btn = document.createElement('button');
     btn.className = 'option-card';
-    btn.innerHTML = renderPrecursorPair(opt.mol1, opt.mol2) +
-      (opt.condition ? '<span class="option-condition">' + opt.condition + '</span>' : '') +
+    btn.innerHTML = renderPrecursors(opt) +
+      (opt.condition ? '<span class="option-condition">' + chemText(opt.condition) + '</span>' : '') +
       '<span class="option-condition"><strong>' + opt.label + '</strong></span>';
     btn.addEventListener('click', function () { answerCheckpoint(opt, btn, optsEl); });
     optsEl.appendChild(btn);
@@ -911,7 +401,7 @@ function triggerCheckpoint(pIdx, key) {
 function answerCheckpoint(opt, btnEl, optsEl) {
   optsEl.querySelectorAll('.option-card').forEach(function (b) { b.disabled = true; });
   btnEl.classList.add(opt.correct ? 'correct' : 'incorrect');
-  $('q-feedback-text').textContent = opt.explain;
+  $('q-feedback-text').innerHTML = chemText(opt.explain);
   $('q-feedback').classList.remove('hidden');
 
   if (opt.correct) {
@@ -1112,7 +602,7 @@ function drawMaze() {
 
 /* ---- HUD ---- */
 function updateHud() {
-  $('hud-room').textContent = 'Room ' + (game.room + 1) + ' of ' + ROOMS.length;
+  $('hud-room').textContent = 'Room ' + (game.room + 1) + '/' + ROOMS.length + ' · ' + preset().label;
   $('hud-lives').textContent = '♥ '.repeat(Math.max(game.lives, 0)).trim() || 'No lives left';
   var solvedCount = game.solved.filter(Boolean).length;
   $('hud-checkpoints').textContent = 'Solved ' + solvedCount + ' / ' + PUZZLES.length;
@@ -1153,6 +643,7 @@ function startGame() {
   game.running = true;
   game.frameCount = 0;
   game.fleeUntilFrame = 0;
+  SCATTER_CHANCE = preset().scatter;
   loadRoom(0);
 
   // AudioContext needs a user gesture to start — this click qualifies
@@ -1211,7 +702,22 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.SCORM) SCORM.init();
 
   $('btn-start').addEventListener('click', startGame);
-  $('btn-restart').addEventListener('click', startGame);
+  // "Try again" returns to the intro so the difficulty can be changed
+  $('btn-restart').addEventListener('click', function () {
+    $('screen-end').classList.add('hidden');
+    $('screen-intro').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  });
+
+  document.querySelectorAll('.diff-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      difficulty = btn.getAttribute('data-diff');
+      document.querySelectorAll('.diff-btn').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+    });
+  });
   $('btn-q-continue').addEventListener('click', closeCheckpointOverlay);
 
   var muteBtn = $('hud-mute');

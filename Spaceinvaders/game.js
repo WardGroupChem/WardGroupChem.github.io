@@ -1,221 +1,14 @@
 /* ============================================================
-   MOLECULE RENDERER  (reused, unchanged, from the retrosynthesis
-   disconnection quiz — see project technical-learnings)
+   STRUCTURES — drawn by chem.js from SMILES (see that file).
+   Every molecule uses the same bond length, angles and label rules.
    ============================================================ */
 
-var BOND = 30;
-var RING_R = 15;
-var BRANCH_LEN = 24;
-var FONT_SIZE = 13;
-var DBL_OFFSET = 2.6;
-var MIN_SEG = 7;
-
-function RING() { return { t: 'ring' }; }
-function C(branch) { return branch ? { t: 'c', branch: branch } : { t: 'c' }; }
-function LBL(text) { return { t: 'label', text: text }; }
-function BR(text, dir, bond) { return { text: text, dir: dir || 'up', bond: bond || 'single' }; }
-function C3(branches) { return { t: 'c3', branches: branches }; }
-function BR3(text, angleDeg, bond) { return { text: text, angle: angleDeg, bond: bond || 'single' }; }
-function MOL(atoms, bonds) { return { atoms: atoms, bonds: bonds || [] }; }
-
-function textHalfWidth(text) {
-  return Math.max(6, text.length * 3.35 + 2);
-}
-
-function ringIconSVG(cx, cy, r) {
-  var pts = [];
-  for (var k = 0; k < 6; k++) {
-    var ang = (Math.PI / 180) * (60 * k - 90);
-    pts.push((cx + r * Math.cos(ang)).toFixed(1) + ',' + (cy + r * Math.sin(ang)).toFixed(1));
-  }
-  return '<polygon points="' + pts.join(' ') + '" class="ring-hex"/>' +
-         '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * 0.55).toFixed(1) + '" class="ring-circle"/>';
-}
-
-function lineSVG(x1, y1, x2, y2, dashed) {
-  return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
-    '" stroke="' + (dashed ? 'var(--break)' : 'var(--ink)') + '" stroke-width="' + (dashed ? 2.4 : 2) +
-    '" stroke-dasharray="' + (dashed ? '5,4' : '0') + '" stroke-linecap="round"/>';
-}
-
-function formatChemText(text) {
-  var out = '';
-  for (var i = 0; i < text.length; i++) {
-    var ch = text[i];
-    if (ch >= '0' && ch <= '9') {
-      out += '<tspan baseline-shift="sub" font-size="72%">' + ch + '</tspan>';
-    } else {
-      out += ch;
-    }
-  }
-  return out;
-}
-
-function labelSVG(x, y, text) {
-  return '<text x="' + x.toFixed(1) + '" y="' + (y + FONT_SIZE * 0.36).toFixed(1) + '" text-anchor="middle" class="atom-label">' + formatChemText(text) + '</text>';
-}
-
-function endPad(atom) {
-  if (atom.t === 'ring') return RING_R;
-  if (atom.t === 'label') return textHalfWidth(atom.text);
-  return 0;
-}
-
-function computeSegSigns(atoms, bonds) {
-  var n = atoms.length;
-  var branchIdx = -1;
-  for (var i = 0; i < n; i++) {
-    if (atoms[i].t === 'c' && atoms[i].branch) { branchIdx = i; break; }
-  }
-  var s0 = 1;
-  if (branchIdx > 0) {
-    var required = (atoms[branchIdx].branch.dir === 'down') ? 1 : -1;
-    var parityPow = ((branchIdx - 1) % 2 === 0) ? 1 : -1;
-    s0 = required * parityPow;
-  }
-  var segSign = [];
-  for (i = 0; i < n - 1; i++) segSign.push(s0 * ((i % 2 === 0) ? 1 : -1));
-
-  bonds = bonds || [];
-  for (i = 0; i < n - 1; i++) {
-    if (bonds[i] === 'triple') {
-      var s = (i - 1 >= 0) ? segSign[i - 1] : segSign[i];
-      segSign[i] = s;
-      if (i + 1 <= n - 2) {
-        segSign[i + 1] = s;
-        // Re-alternate every bond AFTER the forced linear run from scratch.
-        // Only the two bonds immediately flanking the triple bond (the ones
-        // attached to the sp carbons) are required to be collinear with it —
-        // anything further down the chain must kink away normally. Without
-        // this, a later bond can accidentally inherit the same sign as the
-        // linear run purely by parity coincidence (same k%2), stretching it
-        // into one unbroken over-length line instead of a proper zigzag.
-        for (var j = i + 2; j < n - 1; j++) {
-          segSign[j] = -segSign[j - 1];
-        }
-      }
-    }
-  }
-  return segSign;
-}
-
-function drawBond(x1, y1, x2, y2, pad1, pad2, order, dashed) {
-  order = order === true ? 'double' : (order === false ? 'single' : (order || 'single'));
-  var dx = x2 - x1, dy = y2 - y1;
-  var len = Math.sqrt(dx * dx + dy * dy) || 1;
-  var ux = dx / len, uy = dy / len;
-  if (pad1 + pad2 + MIN_SEG > len) {
-    var scale = (len - MIN_SEG) / (pad1 + pad2 || 1);
-    if (scale < 0) scale = 0;
-    pad1 *= scale; pad2 *= scale;
-  }
-  var ax = x1 + ux * pad1, ay = y1 + uy * pad1;
-  var bx = x2 - ux * pad2, by = y2 - uy * pad2;
-  if (order === 'single') return lineSVG(ax, ay, bx, by, dashed);
-  if (order === 'double') {
-    var px = -uy * DBL_OFFSET, py = ux * DBL_OFFSET;
-    return lineSVG(ax + px, ay + py, bx + px, by + py, dashed) +
-           lineSVG(ax - px, ay - py, bx - px, by - py, dashed);
-  }
-  var px2 = -uy * DBL_OFFSET * 1.15, py2 = ux * DBL_OFFSET * 1.15;
-  return lineSVG(ax, ay, bx, by, dashed) +
-         lineSVG(ax + px2, ay + py2, bx + px2, by + py2, dashed) +
-         lineSVG(ax - px2, ay - py2, bx - px2, by - py2, dashed);
-}
-
-function renderMol(mol, opts) {
-  opts = opts || {};
-  var atoms = mol.atoms, bonds = mol.bonds || [];
-  var n = atoms.length;
-  var highlightBond = opts.highlightBond;
-  var segSign = computeSegSigns(atoms, bonds);
-
-  var pos = [{ x: 0, y: 0 }];
-  for (var i = 0; i < n - 1; i++) {
-    var pad1 = endPad(atoms[i]), pad2 = endPad(atoms[i + 1]);
-    var segLen = Math.max(BOND, pad1 + pad2 + MIN_SEG + 4);
-    var sdx, sdy;
-    if (segSign[i] === 0) {
-      sdx = segLen; sdy = 0;
-    } else {
-      sdx = segLen * Math.cos(Math.PI / 6);
-      sdy = segSign[i] * segLen * Math.sin(Math.PI / 6);
-    }
-    pos.push({ x: pos[i].x + sdx, y: pos[i].y + sdy });
-  }
-
-  var body = '';
-  var minX = 0, maxX = 0, minY = 0, maxY = 0;
-
-  function track(x, y) {
-    if (x < minX) minX = x; if (x > maxX) maxX = x;
-    if (y < minY) minY = y; if (y > maxY) maxY = y;
-  }
-  for (i = 0; i < n; i++) {
-    var pad = endPad(atoms[i]);
-    track(pos[i].x - pad, pos[i].y - pad);
-    track(pos[i].x + pad, pos[i].y + pad);
-  }
-
-  for (i = 0; i < n - 1; i++) {
-    var order = bonds[i] || 'single';
-    var isHi = (i === highlightBond);
-    body += drawBond(pos[i].x, pos[i].y, pos[i + 1].x, pos[i + 1].y, endPad(atoms[i]), endPad(atoms[i + 1]), order, isHi);
-  }
-
-  for (i = 0; i < n; i++) {
-    var a = atoms[i];
-    if (a.t === 'c' && a.branch) {
-      var vert = (a.branch.dir === 'down') ? 1 : -1;
-      var labelPad = textHalfWidth(a.branch.text);
-      var branchLen = Math.max(BRANCH_LEN, labelPad + MIN_SEG + 4);
-      var bx = pos[i].x, by = pos[i].y + vert * branchLen;
-      body += drawBond(pos[i].x, pos[i].y, bx, by, 0, labelPad, a.branch.bond || 'single', false);
-      body += labelSVG(bx, by, a.branch.text);
-      track(bx - labelPad, by - 10);
-      track(bx + labelPad, by + 10);
-    }
-    if (a.t === 'c3') {
-      a.branches.forEach(function (br) {
-        var rad = br.angle * Math.PI / 180;
-        var lp = textHalfWidth(br.text);
-        var bl = Math.max(BRANCH_LEN, lp + MIN_SEG + 4);
-        var ex = pos[i].x + bl * Math.cos(rad);
-        var ey = pos[i].y + bl * Math.sin(rad);
-        body += drawBond(pos[i].x, pos[i].y, ex, ey, 0, lp, br.bond || 'single', false);
-        body += labelSVG(ex, ey, br.text);
-        track(ex - lp, ey - 10);
-        track(ex + lp, ey + 10);
-      });
-    }
-  }
-
-  for (i = 0; i < n; i++) {
-    if (atoms[i].t === 'ring') {
-      body += ringIconSVG(pos[i].x, pos[i].y, RING_R);
-    } else if (atoms[i].t === 'label') {
-      body += labelSVG(pos[i].x, pos[i].y, atoms[i].text);
-    }
-  }
-
-  var margin = 8;
-  var w = (maxX - minX) + margin * 2;
-  var h = (maxY - minY) + margin * 2;
-  var offX = margin - minX, offY = margin - minY;
-
-  return '<svg viewBox="0 0 ' + w.toFixed(1) + ' ' + h.toFixed(1) + '" width="' + w.toFixed(0) + '" height="' + h.toFixed(0) +
-    '" xmlns="http://www.w3.org/2000/svg" class="mol"><g transform="translate(' + offX.toFixed(1) + ',' + offY.toFixed(1) + ')">' +
-    body + '</g></svg>';
-}
-
-/* Forward-synthesis reaction row: start molecule -> [reagents go here] -> target molecule.
-   (Replaces the disconnection quiz's renderPrecursorPair, since this quiz asks
-   "what reagents complete this synthesis" rather than "what are the two precursors". */
-function renderReaction(startMol, targetMol) {
+function renderReaction(startSmiles, targetSmiles) {
+  var svgs = Chem.pair(startSmiles, targetSmiles);
   var html = '<div class="reaction-row">';
-  html += '<div class="reaction-mol"><span class="mol-cap">Start</span>' + renderMol(startMol) + '</div>';
+  html += '<div class="reaction-mol"><span class="mol-cap">Start</span>' + svgs[0] + '</div>';
   html += '<div class="reaction-arrow"><span class="arrow-q">?</span><span class="arrow-line"><span class="arrow-shaft"></span><span class="arrow-head"></span></span></div>';
-  html += '<div class="reaction-mol"><span class="mol-cap">Target</span>' + renderMol(targetMol) + '</div>';
+  html += '<div class="reaction-mol"><span class="mol-cap">Target</span>' + svgs[1] + '</div>';
   html += '</div>';
   return html;
 }
@@ -227,8 +20,8 @@ function renderReaction(startMol, targetMol) {
 var PUZZLES = [
   {
     title: 'But-2-ene, from an alkyl halide',
-    start: MOL([C(), C(BR('Br', 'up')), C(), C()]),
-    target: MOL([C(), C(), C(), C()], ['single', 'double', 'single']),
+    start: 'CC(Br)CC',
+    target: 'C/C=C/C',
     options: [
       {
         correct: true,
@@ -248,14 +41,14 @@ var PUZZLES = [
       {
         correct: false,
         reagents: 'Br₂, CCl₄',
-        explain: 'Br2 adds across a C=C double bond — it\'s a test/trap for an alkene, not a reagent that installs one from an alkyl halide.'
+        explain: 'Br₂ adds across a C=C double bond — it\'s a test/trap for an alkene, not a reagent that installs one from an alkyl halide.'
       }
     ]
   },
   {
     title: 'But-2-ene, from an alcohol',
-    start: MOL([C(), C(BR('OH', 'up')), C(), C()]),
-    target: MOL([C(), C(), C(), C()], ['single', 'double', 'single']),
+    start: 'CC(O)CC',
+    target: 'C/C=C/C',
     options: [
       {
         correct: true,
@@ -280,14 +73,14 @@ var PUZZLES = [
     ]
   },
   {
-    title: '(E)-Stilbene, by Wittig olefination',
-    start: MOL([RING(), C(BR('O', 'up', 'double'))]),
-    target: MOL([RING(), C(), C(), RING()], ['single', 'double', 'single']),
+    title: 'Stilbene, by Wittig olefination',
+    start: 'O=Cc1ccccc1',
+    target: 'c1ccc(cc1)C=Cc1ccccc1',
     options: [
       {
         correct: true,
         reagents: 'PPh₃, PhCH₂Br, then n-BuLi',
-        explain: 'Correct — PPh3 and benzyl bromide form a phosphonium salt; deprotonation with base generates the benzylidene ylide, which reacts with the aldehyde shown to form the new C=C bond directly (a Wittig reaction).'
+        explain: 'Correct — PPh₃ and benzyl bromide form a phosphonium salt; deprotonation with base generates the benzylidene ylide, which reacts with the aldehyde shown to form the new C=C bond directly (a Wittig reaction). This semi-stabilised ylide typically gives a mixture of (E)- and (Z)-stilbene.'
       },
       {
         correct: false,
@@ -308,16 +101,13 @@ var PUZZLES = [
   },
   {
     title: '(Z)-Pent-2-ene, from an alkyne',
-    start: MOL([C(), C(), C(), C(), C()], ['single', 'triple', 'single', 'single']),
-    // Each branch sits exactly 120° from the double bond's own direction at
-    // that carbon (same rule as the carbonyl branches) — both branches on
-    // the same 120°-derived side for a cis (Z) alkene.
-    target: MOL([C3([BR3('CH3', -90)]), C3([BR3('CH2CH3', -30)])], ['double']),
+    start: 'CC#CCC',
+    target: 'C/C=C\\CC',
     options: [
       {
         correct: true,
         reagents: 'H₂, Lindlar catalyst',
-        explain: 'Correct — Lindlar\'s poisoned Pd catalyst delivers H2 syn across the triple bond in a single step and stops at the alkene, giving the cis (Z) product.'
+        explain: 'Correct — Lindlar\'s poisoned Pd catalyst delivers H₂ syn across the triple bond in a single step and stops at the alkene, giving the cis (Z) product.'
       },
       {
         correct: false,
@@ -338,10 +128,8 @@ var PUZZLES = [
   },
   {
     title: '(E)-Pent-2-ene, from an alkyne',
-    start: MOL([C(), C(), C(), C(), C()], ['single', 'triple', 'single', 'single']),
-    // Same 120°-from-the-double-bond rule, but the second branch takes the
-    // OTHER 120°-valid position (opposite side) — trans (E) alkene.
-    target: MOL([C3([BR3('CH3', -90)]), C3([BR3('CH2CH3', 90)])], ['double']),
+    start: 'CC#CCC',
+    target: 'C/C=C/CC',
     options: [
       {
         correct: true,
@@ -367,8 +155,8 @@ var PUZZLES = [
   },
   {
     title: 'But-1-yne, from a vicinal dihalide',
-    start: MOL([C(BR('Br', 'up')), C(BR('Br', 'down')), C(), C()]),
-    target: MOL([C(), C(), C(), C()], ['triple', 'single', 'single']),
+    start: 'BrCC(Br)CC',
+    target: 'C#CCC',
     options: [
       {
         correct: true,
@@ -394,8 +182,8 @@ var PUZZLES = [
   },
   {
     title: 'Propyne, from a geminal dihalide',
-    start: MOL([C3([BR3('CH3', -135), BR3('CH3', -45), BR3('Br', 45), BR3('Br', 135)])]),
-    target: MOL([C(), C(), C()], ['triple', 'single']),
+    start: 'CC(Br)(Br)C',
+    target: 'CC#C',
     options: [
       {
         correct: true,
@@ -421,8 +209,8 @@ var PUZZLES = [
   },
   {
     title: 'Hept-3-yne, by acetylide alkylation',
-    start: MOL([C(), C(), C(), C(), C()], ['triple', 'single', 'single', 'single']),
-    target: MOL([C(), C(), C(), C(), C(), C(), C()], ['single', 'single', 'triple', 'single', 'single', 'single']),
+    start: 'C#CCCC',
+    target: 'CCC#CCCC',
     options: [
       {
         correct: true,
@@ -432,7 +220,7 @@ var PUZZLES = [
       {
         correct: false,
         reagents: 'LDA, THF; then (CH₃)₃CBr',
-        explain: 'The acetylide is a strong, hindered base — with a tertiary halide like tert-butyl bromide it promotes E2 elimination instead of SN2 substitution, so the chain isn\'t extended as drawn.'
+        explain: 'The acetylide is a strong base — with a tertiary halide like tert-butyl bromide it promotes E2 elimination instead of SN2 substitution, so the chain isn\'t extended as drawn.'
       },
       {
         correct: false,
@@ -442,7 +230,7 @@ var PUZZLES = [
       {
         correct: false,
         reagents: 'NaOH; then CH₃CH₂Br',
-        explain: 'Hydroxide (conjugate acid pKa ~15.7) is nowhere near basic enough to deprotonate a terminal alkyne (pKa ~25) — no acetylide forms, so no alkylation can occur.'
+        explain: 'Hydroxide (conjugate acid pKₐ ~15.7) is nowhere near basic enough to deprotonate a terminal alkyne (pKₐ ~25) — no acetylide forms, so no alkylation can occur.'
       }
     ]
   }

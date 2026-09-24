@@ -17,18 +17,31 @@
     </div>
   </header>
 
-  <main id="screen-intro" class="screen">
+  <main id="screen-intro" class="screen intro">
+    <div class="intro-hero" aria-hidden="true">
+      <svg class="hero-invader" viewBox="0 0 11 8" width="66" height="48" shape-rendering="crispEdges">
+        <path fill="currentColor" d="M2 0h1v1H2zM8 0h1v1H8zM3 1h1v1H3zM7 1h1v1H7zM2 2h7v1H2zM1 3h2v1H1zM4 3h3v1H4zM8 3h2v1H8zM0 4h11v1H0zM0 5h1v1H0zM2 5h7v1H2zM10 5h1v1h-1zM0 6h1v1H0zM2 6h1v1H2zM8 6h1v1H8zM10 6h1v1h-1zM3 7h2v1H3zM6 7h2v1H6z"/>
+      </svg>
+    </div>
     <h1>Defend the lab.</h1>
-    <p class="lede">Clear the invaders while reagent capsules drift down every so often. Catch one — shoot it, or just let it arrive — and answer the synthesis question to upgrade your bullets.</p>
-    <ul class="rules">
-      <li>Arrow keys / A-D to move, Space to fire (or the on-screen buttons)</li>
-      <li>Bullets start as alkane (—), upgrade to alkene (=) then alkyne (≡) on correct answers — alkyne shots pierce through a whole column</li>
-      <li>A wrong answer costs a life and drops your bullet back a tier</li>
-      <li>Crystal bunkers give you cover — they take damage from either side and stay damaged</li>
-      <li>Invaders occasionally fire back, and reaching the bottom also costs a life</li>
-      <li>Every ~10s a shield pickup (hex with a shield icon) also drifts down — touch it or shoot it to block the next alien shot</li>
-      <li>8 questions total — score 70% or higher to pass</li>
-    </ul>
+    <p class="lede">Blast the invaders. Catch reagent capsules and answer synthesis questions to power up your bullets.</p>
+
+    <div class="intro-tiles">
+      <div class="tile">
+        <span class="tile-icon icon-capsule">?</span>
+        <p><strong>Capsule = question.</strong> Right answers upgrade your bullets; wrong ones cost a life and a tier.</p>
+      </div>
+      <div class="tile">
+        <span class="tile-icon icon-tiers"><b class="t0">—</b><b class="t1">=</b><b class="t2">≡</b></span>
+        <p><strong>Alkane → alkene → alkyne.</strong> Alkyne shots pierce a whole column.</p>
+      </div>
+      <div class="tile">
+        <span class="tile-icon icon-shield"><svg viewBox="0 0 38 38" width="38" height="38"><polygon points="10,3 28,3 37,19 28,35 10,35 1,19" fill="rgba(79,216,232,0.14)" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M19 10l6 2.5v4.5c0 4.2-2.7 7-6 8.5-3.3-1.5-6-4.3-6-8.5v-4.5z"/></svg></span>
+        <p><strong>Shield pickups</strong> block one alien shot. Bunkers give cover.</p>
+      </div>
+    </div>
+
+    <p class="intro-meta">← → or A/D to move · Space to fire · on-screen buttons on phones · 8 questions, 70% to pass</p>
 
     <div class="difficulty-select">
       <span class="difficulty-label">Difficulty</span>
@@ -39,7 +52,7 @@
       </div>
     </div>
 
-    <button id="btn-start" class="btn btn-primary">Start</button>
+    <button id="btn-start" class="btn btn-primary btn-launch">Launch</button>
   </main>
 
   <main id="screen-game" class="screen hidden">
@@ -99,6 +112,7 @@
 </div>
 
 <script src="scormapi.js"></script>
+<script src="chem.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
