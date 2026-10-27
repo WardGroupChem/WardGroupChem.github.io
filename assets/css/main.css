@@ -1599,7 +1599,8 @@ input, select, textarea {
 			margin: 0 0 2em 0;
 		}
 
-		.box.post h2 {
+		.box.post h2,
+		.box.post h1 {
 			font-size: 2.5em;
 			letter-spacing: -0.015em;
 		}
@@ -2100,7 +2101,8 @@ input, select, textarea {
 		text-align: center;
 	}
 
-		#header h1 {
+		#header h1,
+		#header .site-title {
 			color: #252122;
 			font-weight: 900;
 			font-size: 2.5em;
@@ -2218,7 +2220,8 @@ input, select, textarea {
 			border-radius: 5px;
 		}
 
-			#banner header h2 {
+			#banner header h2,
+			#banner header h1 {
 				color: #fff;
 				font-weight: 700;
 				font-size: 2.5em;
@@ -2836,7 +2839,8 @@ input, select, textarea {
 					margin: 0 0 1em 0;
 				}
 
-				.box.post h2 {
+				.box.post h2,
+				.box.post h1 {
 					font-size: 1.5em;
 					line-height: 1.5em;
 				}
@@ -2911,7 +2915,8 @@ input, select, textarea {
 				padding: 2em 0;
 			}
 
-				#header h1 {
+				#header h1,
+				#header .site-title {
 					color: #252122;
 					font-weight: 900;
 					font-size: 1.75em;
@@ -2946,7 +2951,8 @@ input, select, textarea {
 					border-radius: 0;
 				}
 
-					#banner header h2 {
+					#banner header h2,
+					#banner header h1 {
 						font-size: 1.5em;
 						line-height: 1.5em;
 						margin: 0 0 0.25em 0;
@@ -2969,3 +2975,53 @@ input, select, textarea {
 			}
 
 	}
+
+/* ===== Additions (site clean-up) ===== */
+
+/* Site title is now a link in a <p> so each page can have its own <h1> */
+#header .site-title { margin: 0; }
+#header .site-title a { color: inherit; text-decoration: none; }
+
+/* Accessibility */
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 10000; background: #252122; color: #fff; padding: 0.5em 1em; }
+.skip-link:focus { left: 0; }
+a:focus-visible, button:focus-visible { outline: 3px solid #d52349; outline-offset: 2px; }
+
+/* Body text blocks (replaces paragraphs that were wrapped in <h4>) */
+.prose p { margin: 0 0 1em 0; text-align: left; }
+.prose h2 { margin: 1.5em 0 0.4em 0; }
+
+/* Home page video: portrait clip shown at its true proportions */
+.intro-video { display: block; width: auto; max-width: 100%; height: auto; max-height: 280px; margin: 0 auto; }
+.video-toggle { display: block; margin: 0.5em auto 1em auto; background: none !important; border: 0; box-shadow: none; padding: 0; color: #d52349 !important; font: inherit; font-size: 0.75em; text-decoration: underline; cursor: pointer; }
+
+/* Contact form: scales down on phones instead of forcing sideways scrolling */
+.form-embed iframe { display: block; width: 100%; max-width: 640px; height: 760px; border: 0; background: #fff; }
+
+/* Group members */
+ul.members { list-style: none; padding: 0; margin: 0 0 1.5em 0; }
+ul.members li { padding: 0; margin: 0 0 0.35em 0; }
+
+/* Publications list */
+.year-jump { line-height: 2em; }
+.year-jump a { margin-right: 0.6em; }
+article.box h2[id^="y"] { margin: 1.5em 0 0.3em 0; padding-bottom: 0.2em; border-bottom: 2px solid #d52349; }
+ul.pubs { list-style: none; padding: 0; margin: 0 0 1em 0; }
+ul.pubs li { padding: 0.8em 0; margin: 0; border-bottom: 1px solid #e5e5e5; line-height: 1.5em; }
+.pub-num { color: #d52349; font-weight: 700; margin-right: 0.3em; }
+.pub-title { font-weight: 700; color: #252122; }
+.pub-meta { display: block; margin-top: 0.15em; font-size: 0.9em; }
+.pub-doi { white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .intro-video { animation: none; } }
+
+/* Inner-page banner image: fixed-height crop so content starts higher up the page */
+article.box.post > .image.featured img { width: 100%; height: 220px; object-fit: cover; object-position: center; }
+.box strong { font-weight: 700; }
+
+@media screen and (max-width: 736px) {
+	article.box.post > .image.featured img { height: 130px; }
+}
+
+/* Sub-headings inside articles (override the large article-title size) */
+.box.post .prose h2, .box.post h2.sub, article.box.post h2[id^="y"] { font-size: 1.5em; line-height: 1.3em; letter-spacing: 0; }

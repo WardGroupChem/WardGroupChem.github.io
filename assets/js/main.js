@@ -61,4 +61,20 @@
 					visibleClass: 'navPanel-visible'
 				});
 
+	// Video: pause button, and don't autoplay for people who prefer reduced motion.
+		$('video.intro-video').each(function() {
+			var v = this, $btn = $(v).siblings('.video-toggle');
+			function sync() {
+				$btn.text(v.paused ? 'Play animation' : 'Pause animation')
+					.attr('aria-pressed', v.paused ? 'true' : 'false');
+			}
+			if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				v.removeAttribute('autoplay');
+				v.pause();
+			}
+			$btn.on('click', function() { if (v.paused) { v.play(); } else { v.pause(); } });
+			$(v).on('play pause', sync);
+			sync();
+		});
+
 })(jQuery);
